@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>注册 - 图书管理系统</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-side">
+    <div class="logo-box">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      </svg>
+    </div>
+    <h1>图书管理系统</h1>
+    <p>知识管理，从这里开始</p>
+  </div>
+
+  <div class="auth-main">
+    <div class="auth-card">
+      <div class="card auth-box">
+        <h2>创建账号</h2>
+        <p class="sub">加入我们，开启阅读之旅</p>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form th:action="@{/register}" method="post" onsubmit="return checkRegister()">
+          <div class="form-group">
+            <label>用户名 <span class="required">*</span></label>
+            <input class="form-control" type="text" id="username" name="username" placeholder="3-50 个字符" required/>
+            <p class="field-error" id="usernameErr" style="display:none">用户名至少 3 个字符</p>
+          </div>
+          <div class="form-group">
+            <label>显示名称</label>
+            <input class="form-control" type="text" name="displayName" placeholder="可选"/>
+          </div>
+          <div class="form-group">
+            <label>密码 <span class="required">*</span></label>
+            <input class="form-control" type="password" id="password" name="password" placeholder="至少 6 个字符" required/>
+          </div>
+          <div class="form-group">
+            <label>确认密码 <span class="required">*</span></label>
+            <input class="form-control" type="password" id="confirmPassword" placeholder="请再次输入密码" required/>
+            <p class="field-error" id="confirmErr" style="display:none">两次输入的密码不一致</p>
+          </div>
+          <div class="form-group">
+            <label>角色</label>
+            <select class="form-control" name="role">
+              <option value="reader" selected>读者</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">注 册</button>
+        </form>
+
+        <div class="auth-footer">
+          已有账号？<a th:href="@{/login}">立即登录</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function checkRegister() {
+    var username = document.getElementById('username').value.trim();
+    var password = document.getElementById('password').value;
+    var confirmPwd = document.getElementById('confirmPassword').value;
+
+    var ok = true;
+    document.getElementById('usernameErr').style.display = username.length >= 3 ? 'none' : 'block';
+    if (username.length < 3) ok = false;
+    document.getElementById('confirmErr').style.display = password === confirmPwd ? 'none' : 'block';
+    if (password !== confirmPwd) ok = false;
+    return ok;
+  }
+</script>
+</body>
+</html>

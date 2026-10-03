@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:with="activePage='admin'">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="|${book.id == null} ? '添加图书' : '编辑图书' - 图书管理系统|">图书表单</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header th:replace="~{fragments/layout :: navbar}"></header>
+
+<div class="page">
+  <div class="card form-card">
+    <div class="page-header" style="margin-bottom:20px">
+      <div>
+        <h1 th:text="${book.id == null} ? '添加图书' : '编辑图书'"></h1>
+        <p class="sub" th:text="${book.id == null} ? '录入一本新的馆藏图书' : '修改图书信息'"></p>
+      </div>
+    </div>
+
+    <form th:action="@{/admin/books/save}" method="post">
+      <input type="hidden" name="id" th:value="${book.id}"/>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>书名 <span class="required">*</span></label>
+          <input class="form-control" type="text" name="title" th:value="${book.title}" placeholder="请输入书名" required/>
+        </div>
+        <div class="form-group">
+          <label>作者 <span class="required">*</span></label>
+          <input class="form-control" type="text" name="author" th:value="${book.author}" placeholder="请输入作者" required/>
+        </div>
+        <div class="form-group">
+          <label>ISBN</label>
+          <input class="form-control" type="text" name="isbn" th:value="${book.isbn}" placeholder="请输入 ISBN"/>
+        </div>
+        <div class="form-group">
+          <label>分类</label>
+          <select class="form-control" name="category">
+            <option value="" th:selected="${book.category == null or book.category == ''}">请选择分类</option>
+            <option th:each="c : ${categories}" th:value="${c}" th:text="${c}" th:selected="${book.category == c}"></option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>出版社</label>
+          <input class="form-control" type="text" name="publisher" th:value="${book.publisher}" placeholder="请输入出版社"/>
+        </div>
+        <div class="form-group">
+          <label>出版日期</label>
+          <input class="form-control" type="date" name="publishDate" th:value="${book.publishDate}" placeholder="请输入出版日期"/>
+        </div>
+        <div class="form-group">
+          <label>页数</label>
+          <input class="form-control" type="number" name="pages" th:value="${book.pages}" placeholder="请输入页数" min="1"/>
+        </div>
+        <div class="form-group">
+          <label>库存</label>
+          <input class="form-control" type="number" name="stock" th:value="${book.stock != null} ? ${book.stock} : 0" placeholder="请输入库存" min="0"/>
+        </div>
+        <div class="form-group full">
+          <label>封面图片</label>
+          <div class="cover-uploader">
+            <!-- 点击区域：点击或拖拽图片到此处 -->
+            <div class="cover-drop" id="coverDrop" tabindex="0" role="button" title="点击选择本地图片">
+              <img id="coverPreview" alt="封面预览" hidden/>
+              <div class="cover-upload-hint" id="coverHint">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span class="hint-main">点击上传本地图片</span>
+                <span class="hint-sub">JPG / PNG / GIF / WEBP，≤5MB</span>
+              </div>
+              <div class="cover-upload-mask" id="coverMask">
+                <span class="spinner"></span>
+                <span>上传中…</span>
+              </div>
+            </div>
+            <input type="file" id="coverFile" accept="image/png,image/jpeg,image/gif,image/webp" hidden/>
+
+            <div class="cover-upload-side">
+              <!-- 真正提交给后端的字段 -->
+              <input type="hidden" name="coverUrl" id="coverUrl" th:value="${book.coverUrl}"/>
+              <input class="form-control" type="text" id="coverUrlText" th:value="${book.coverUrl}"
+                     placeholder="也可以粘贴网络图片 URL…"/>
+              <p class="upload-status" id="uploadStatus"></p>
+              <button type="button" class="btn btn-outline btn-sm" id="removeCover" hidden>移除封面</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>图书简介</label>
+          <textarea class="form-control" name="description" rows="4" style="resize:vertical"
+                    placeholder="请输入图书简介" th:text="${book.description}"></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" th:text="${book.id == null} ? '保存' : '保存修改'">保存</button>
+        <a class="btn btn-outline" th:href="@{/admin/books}">取消</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script th:inline="javascript">
+(function () {
+  var UPLOAD_URL = /*[[@{/admin/books/upload-cover}]]*/ '/admin/books/upload-cover';
+  var MAX_SIZE = 5 * 1024 * 1024;
+
+  var drop = document.getElementById('coverDrop');
+  var fileInput = document.getElementById('coverFile');
+  var preview = document.getElementById('coverPreview');
+  var hint = document.getElementById('coverHint');
+  var mask = document.getElementById('coverMask');
+  var coverUrl = document.getElementById('coverUrl');
+  var urlText = document.getElementById('coverUrlText');
+  var statusEl = document.getElementById('uploadStatus');
+  var removeBtn = document.getElementById('removeCover');
+
+  var lastObjectUrl = null;
+  var savedUrl = ''; // 最近一次确认可用的 URL（用于上传失败时回退）
+
+  function setStatus(type, text) {
+    statusEl.className = 'upload-status' + (type ? ' ' + type : '');
+    statusEl.textContent = text || '';
+  }
+
+  function showPreview(src) {
+    preview.src = src;
+    preview.hidden = false;
+    hint.style.display = 'none';
+    removeBtn.hidden = false;
+  }
+
+  function clearPreview() {
+    preview.hidden = true;
+    preview.removeAttribute('src');
+    hint.style.display = '';
+    removeBtn.hidden = true;
+    if (lastObjectUrl) {
+      URL.revokeObjectURL(lastObjectUrl);
+      lastObjectUrl = null;
+    }
+  }
+
+  function setCoverUrl(url) {
+    coverUrl.value = url || '';
+    urlText.value = url || '';
+  }
+
+  /** 编辑已有图书时，展示数据库中的旧封面 */
+  function initExisting() {
+    var url = coverUrl.value.trim();
+    if (url) {
+      savedUrl = url;
+      showPreview(url);
+      setStatus('', '');
+    }
+  }
+
+  function validateFile(file) {
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+      return '请选择图片文件（JPG / PNG / GIF / WEBP）';
+    }
+    if (file.size > MAX_SIZE) {
+      return '图片大小不能超过 5MB';
+    }
+    return null;
+  }
+
+  function uploadFile(file) {
+    var err = validateFile(file);
+    if (err) {
+      setStatus('error', err);
+      return;
+    }
+
+    // 立即用本地文件做预览，无需等待服务器
+    if (lastObjectUrl) {
+      URL.revokeObjectURL(lastObjectUrl);
+    }
+    lastObjectUrl = URL.createObjectURL(file);
+    showPreview(lastObjectUrl);
+
+    mask.style.display = 'flex';
+    setStatus('', '正在上传…');
+
+    var formData = new FormData();
+    formData.append('file', file);
+
+    fetch(UPLOAD_URL, { method: 'POST', body: formData })
+      .then(function (resp) {
+        return resp.json();
+      })
+      .then(function (data) {
+        mask.style.display = 'none';
+        if (data && data.success) {
+          savedUrl = data.url;
+          setCoverUrl(data.url);
+          showPreview(data.url); // 换成服务器地址
+          if (lastObjectUrl) {
+            URL.revokeObjectURL(lastObjectUrl);
+            lastObjectUrl = null;
+          }
+          setStatus('success', '上传成功，保存图书后生效');
+        } else {
+          rollback(data && data.message ? data.message : '图片上传失败，请重试');
+        }
+      })
+      .catch(function () {
+        mask.style.display = 'none';
+        rollback('图片上传失败，请检查网络后重试');
+      });
+  }
+
+  function rollback(message) {
+    setStatus('error', message);
+    if (savedUrl) {
+      setCoverUrl(savedUrl);
+      showPreview(savedUrl);
+    } else {
+      setCoverUrl('');
+      clearPreview();
+    }
+  }
+
+  // ---- 点击 / 键盘触发文件选择 ----
+  drop.addEventListener('click', function () {
+    fileInput.click();
+  });
+  drop.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files[0]) {
+      uploadFile(fileInput.files[0]);
+    }
+    fileInput.value = ''; // 允许再次选择同一个文件
+  });
+
+  // ---- 拖拽上传 ----
+  ['dragenter', 'dragover'].forEach(function (evt) {
+    drop.addEventListener(evt, function (e) {
+      e.preventDefault();
+      drop.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    drop.addEventListener(evt, function (e) {
+      e.preventDefault();
+      drop.classList.remove('dragover');
+    });
+  });
+  drop.addEventListener('drop', function (e) {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      uploadFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  // ---- 粘贴网络 URL ----
+  urlText.addEventListener('change', function () {
+    var url = urlText.value.trim();
+    coverUrl.value = url;
+    if (url) {
+      savedUrl = url;
+      showPreview(url);
+      setStatus('', '');
+    } else {
+      savedUrl = '';
+      clearPreview();
+      setStatus('', '');
+    }
+  });
+
+  // 网络图片加载失败时给出提示（不影响保存）
+  preview.addEventListener('error', function () {
+    if (!preview.hidden && preview.src.indexOf('blob:') !== 0) {
+      setStatus('error', '该 URL 的图片无法访问，请检查地址');
+    }
+  });
+
+  // ---- 移除封面 ----
+  removeBtn.addEventListener('click', function () {
+    savedUrl = '';
+    setCoverUrl('');
+    clearPreview();
+    setStatus('', '');
+  });
+
+  initExisting();
+})();
+</script>
+
+</body>
+</html>

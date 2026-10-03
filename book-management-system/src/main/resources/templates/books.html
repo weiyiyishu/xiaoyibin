@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:with="activePage='books'">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>图书列表 - 图书管理系统</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header th:replace="~{fragments/layout :: navbar}"></header>
+
+<div class="page">
+  <!-- 搜索栏 -->
+  <div class="card search-bar">
+    <form class="search-form" th:action="@{/books}" method="get">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="搜索书名、作者、ISBN..."/>
+      <select name="category" class="form-control" style="width:140px">
+        <option value="" th:selected="${category == ''}">全部分类</option>
+        <option th:each="c : ${categories}" th:value="${c}" th:text="${c}" th:selected="${category == c}"></option>
+      </select>
+      <button type="submit" class="btn btn-primary">搜索</button>
+    </form>
+  </div>
+
+  <!-- 图书卡片 -->
+  <div class="book-grid" th:if="${pageInfo.records != null and !#lists.isEmpty(pageInfo.records)}">
+    <a class="book-card" th:each="book : ${pageInfo.records}" th:href="@{/books/{id}(id=${book.id})}">
+      <div class="book-cover">
+        <img th:if="${book.coverUrl != null and !#strings.isEmpty(book.coverUrl)}"
+             th:src="${book.coverUrl}" th:alt="${book.title}"/>
+        <div th:unless="${book.coverUrl != null and !#strings.isEmpty(book.coverUrl)}" class="cover-placeholder">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="book-info">
+        <h3 th:text="${book.title}"></h3>
+        <p class="author" th:text="${book.author}"></p>
+        <div class="book-meta">
+          <span class="badge" th:if="${book.category != null}" th:text="${book.category}"></span>
+          <span th:unless="${book.category != null}"></span>
+          <span class="stock"
+                th:classappend="${book.stock != null and book.stock > 0} ? 'in' : 'out'"
+                th:text="${book.stock != null and book.stock > 0} ? '可借' : '已借完'"></span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- 空状态 -->
+  <div class="empty" th:if="${pageInfo.records == null or #lists.isEmpty(pageInfo.records)}">
+    <p class="empty-title">暂无图书</p>
+    <p th:text="${keyword != '' or category != ''} ? '没有找到符合条件的图书，请尝试其他搜索条件' : '书库中还没有图书'"></p>
+  </div>
+
+  <!-- 分页 -->
+  <div class="pagination" th:if="${pageInfo.pages > 1}">
+    <a class="page-btn"
+       th:href="@{/books(page=1, keyword=${keyword}, category=${category})}">首页</a>
+    <a class="page-btn"
+       th:classappend="${pageInfo.current <= 1} ? 'disabled'"
+       th:href="@{/books(page=${pageInfo.current <= 1 ? 1 : pageInfo.current - 1}, keyword=${keyword}, category=${category})}">上一页</a>
+    <span class="page-info" th:text="|第 ${pageInfo.current} / ${pageInfo.pages} 页|"></span>
+    <a class="page-btn"
+       th:classappend="${pageInfo.current >= pageInfo.pages} ? 'disabled'"
+       th:href="@{/books(page=${pageInfo.current >= pageInfo.pages ? pageInfo.pages : pageInfo.current + 1}, keyword=${keyword}, category=${category})}">下一页</a>
+    <a class="page-btn"
+       th:href="@{/books(page=${pageInfo.pages}, keyword=${keyword}, category=${category})}">末页</a>
+  </div>
+</div>
+
+</body>
+</html>

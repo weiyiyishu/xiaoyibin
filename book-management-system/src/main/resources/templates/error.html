@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>出错了 - 图书管理系统</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-main" style="flex:1">
+    <div class="card auth-card" style="text-align:center; padding:48px 36px">
+      <h2 style="margin-bottom:10px">出错了</h2>
+      <p class="sub" th:text="${error} ?: '页面发生错误，请返回重试'" style="margin-bottom:24px"></p>
+      <a class="btn btn-primary" th:href="@{/books}">返回图书列表</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

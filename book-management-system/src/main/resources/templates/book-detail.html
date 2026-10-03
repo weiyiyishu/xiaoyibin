@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:with="activePage='books'">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="|${book.title} - 图书管理系统|">图书详情</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header th:replace="~{fragments/layout :: navbar}"></header>
+
+<div class="page">
+  <div class="card detail-card">
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+    <div class="detail-layout">
+      <div class="detail-cover">
+        <div class="book-cover">
+          <img th:if="${book.coverUrl != null and !#strings.isEmpty(book.coverUrl)}"
+               th:src="${book.coverUrl}" th:alt="${book.title}"/>
+          <div th:unless="${book.coverUrl != null and !#strings.isEmpty(book.coverUrl)}" class="cover-placeholder">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-info">
+        <h1 th:text="${book.title}"></h1>
+        <div class="detail-meta">
+          <div class="item"><label>作者</label><span th:text="${book.author}"></span></div>
+          <div class="item"><label>ISBN</label><span th:text="${book.isbn != null} ? ${book.isbn} : '-'"></span></div>
+          <div class="item"><label>分类</label><span th:text="${book.category != null} ? ${book.category} : '-'"></span></div>
+          <div class="item"><label>出版社</label><span th:text="${book.publisher != null} ? ${book.publisher} : '-'"></span></div>
+          <div class="item"><label>出版日期</label><span th:text="${book.publishDate != null} ? ${book.publishDate} : '-'"></span></div>
+          <div class="item"><label>页数</label><span th:text="${book.pages != null} ? ${book.pages} : '-'"></span></div>
+          <div class="item"><label>库存</label>
+            <span th:classappend="${book.stock != null and book.stock > 0} ? 'stock in' : 'stock out'"
+                  th:text="${book.stock != null and book.stock > 0} ? |可借（库存 ${book.stock}）| : '已借完'"></span>
+          </div>
+        </div>
+
+        <div class="detail-desc" th:if="${book.description != null and !#strings.isEmpty(book.description)}">
+          <h3>图书简介</h3>
+          <p th:text="${book.description}"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="back-bar">
+      <a class="btn btn-outline" th:href="@{/books}">&larr; 返回图书列表</a>
+
+      <!-- 借阅操作区 -->
+      <div class="borrow-action">
+        <form th:if="${borrowing}" th:action="@{/my/borrows}" method="get" style="margin:0">
+          <button type="submit" class="btn btn-outline">你已借阅此书，去归还 →</button>
+        </form>
+        <form th:if="${!borrowing and (book.stock == null or book.stock <= 0)}"
+              th:action="@{/my/borrows}" method="get" style="margin:0">
+          <button type="submit" class="btn btn-primary" disabled>暂无库存</button>
+        </form>
+        <form th:if="${!borrowing and book.stock != null and book.stock > 0}"
+              th:action="@{/borrow/{id}(id=${book.id})}" method="post" style="margin:0"
+              th:attr="onsubmit=|return confirm('确定借阅《${book.title}》吗？请在 30 天内归还。');|">
+          <button type="submit" class="btn btn-primary">立即借阅</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

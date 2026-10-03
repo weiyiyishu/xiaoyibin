@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- 顶部导航栏片段 -->
+<header th:fragment="navbar" class="navbar">
+  <div class="navbar-inner">
+    <a th:href="@{/books}" class="brand">
+      <span class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </span>
+      <span>图书管理系统</span>
+    </a>
+
+    <nav class="nav-links">
+      <a th:href="@{/books}"
+         th:classappend="${activePage == 'books'} ? 'active'">图书列表</a>
+      <a th:href="@{/my/borrows}"
+         th:classappend="${activePage == 'my'} ? 'active'">我的借阅</a>
+      <a th:if="${session.loginUser != null and session.loginUser.role == 'admin'}"
+         th:href="@{/admin/books}"
+         th:classappend="${activePage == 'admin'} ? 'active'">图书管理</a>
+      <a th:if="${session.loginUser != null and session.loginUser.role == 'admin'}"
+         th:href="@{/admin/borrows}"
+         th:classappend="${activePage == 'adminBorrow'} ? 'active'">借阅记录</a>
+    </nav>
+
+    <div class="nav-user">
+      <span class="user-name" th:text="${session.loginUser.displayName} ?: ${session.loginUser.username}"></span>
+      <span class="role-badge"
+            th:text="${session.loginUser.role == 'admin'} ? '管理员' : '读者'"></span>
+      <form th:action="@{/logout}" method="post" style="margin:0">
+        <button type="submit" class="btn btn-outline btn-sm">退出登录</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+</body>
+</html>

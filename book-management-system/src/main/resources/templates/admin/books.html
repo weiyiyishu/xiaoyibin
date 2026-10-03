@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:with="activePage='admin'">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>图书管理 - 图书管理系统</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header th:replace="~{fragments/layout :: navbar}"></header>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>图书管理</h1>
+      <p class="sub">管理馆藏图书，支持增删改查</p>
+    </div>
+    <a class="btn btn-primary" th:href="@{/admin/books/form}">＋ 添加图书</a>
+  </div>
+
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+  <!-- 搜索栏 -->
+  <div class="card search-bar">
+    <form class="search-form" th:action="@{/admin/books}" method="get">
+      <input type="text" name="keyword" th:value="${keyword}" placeholder="搜索书名、作者、ISBN..."/>
+      <select name="category" class="form-control" style="width:140px">
+        <option value="" th:selected="${category == ''}">全部分类</option>
+        <option th:each="c : ${categories}" th:value="${c}" th:text="${c}" th:selected="${category == c}"></option>
+      </select>
+      <button type="submit" class="btn btn-outline">搜索</button>
+    </form>
+  </div>
+
+  <!-- 图书表格 -->
+  <div class="card" th:if="${pageInfo.records != null and !#lists.isEmpty(pageInfo.records)}">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+        <tr>
+          <th>封面</th>
+          <th>书名</th>
+          <th>作者</th>
+          <th>ISBN</th>
+          <th>分类</th>
+          <th>库存</th>
+          <th style="text-align:right">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="book : ${pageInfo.records}">
+          <td>
+            <img th:if="${book.coverUrl != null and !#strings.isEmpty(book.coverUrl)}"
+                 class="cover-thumb" th:src="${book.coverUrl}" th:alt="${book.title}"/>
+            <div th:unless="${book.coverUrl != null and !#strings.isEmpty(book.coverUrl)}" class="cover-thumb-ph">书</div>
+          </td>
+          <td style="font-weight:500" th:text="${book.title}"></td>
+          <td th:text="${book.author}"></td>
+          <td th:text="${book.isbn != null} ? ${book.isbn} : '-'"></td>
+          <td th:text="${book.category != null} ? ${book.category} : '-'"></td>
+          <td>
+            <span class="stock"
+                  th:classappend="${book.stock != null and book.stock > 0} ? 'in' : 'out'"
+                  th:text="${book.stock}"></span>
+          </td>
+          <td style="text-align:right">
+            <div class="table-actions" style="justify-content:flex-end">
+              <a class="icon-btn" th:href="@{/admin/books/form(id=${book.id})}">编辑</a>
+              <form th:action="@{/admin/books/delete}" method="post" style="margin:0"
+                    th:attr="onsubmit=|return confirm('确定要删除图书「${book.title}」吗？此操作无法撤销。');|">
+                <input type="hidden" name="id" th:value="${book.id}"/>
+                <button type="submit" class="icon-btn danger">删除</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span th:text="|共 ${pageInfo.total} 条，第 ${pageInfo.current} / ${pageInfo.pages} 页|"></span>
+      <div class="pagination small">
+        <a class="page-btn" th:classappend="${pageInfo.current <= 1} ? 'disabled'"
+           th:href="@{/admin/books(page=${pageInfo.current <= 1 ? 1 : pageInfo.current - 1}, keyword=${keyword}, category=${category})}">上一页</a>
+        <a class="page-btn" th:classappend="${pageInfo.current >= pageInfo.pages} ? 'disabled'"
+           th:href="@{/admin/books(page=${pageInfo.current >= pageInfo.pages ? pageInfo.pages : pageInfo.current + 1}, keyword=${keyword}, category=${category})}">下一页</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 空状态 -->
+  <div class="empty" th:if="${pageInfo.records == null or #lists.isEmpty(pageInfo.records)}">
+    <p class="empty-title">暂无图书</p>
+    <p>点击右上角「添加图书」按钮开始添加馆藏图书</p>
+  </div>
+</div>
+
+</body>
+</html>

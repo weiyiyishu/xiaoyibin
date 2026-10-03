@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:with="activePage='my'">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>我的借阅 - 图书管理系统</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header th:replace="~{fragments/layout :: navbar}"></header>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>我的借阅</h1>
+      <p class="sub">在此查看借阅中的图书并归还，也可查看历史记录</p>
+    </div>
+  </div>
+
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+  <!-- ============ 借阅中 ============ -->
+  <h2 class="section-title">借阅中
+    <span class="section-count" th:text="${activeRecords.size()}"></span>
+  </h2>
+
+  <div class="card" th:if="${!activeRecords.isEmpty()}">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+        <tr>
+          <th>封面</th>
+          <th>书名</th>
+          <th>作者</th>
+          <th>借出时间</th>
+          <th>应还时间</th>
+          <th>状态</th>
+          <th style="text-align:right">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${activeRecords}">
+          <td>
+            <a th:href="@{/books/{id}(id=${r.bookId})}">
+              <img th:if="${r.coverUrl != null and !#strings.isEmpty(r.coverUrl)}"
+                   class="cover-thumb" th:src="${r.coverUrl}" th:alt="${r.bookTitle}"/>
+              <div th:unless="${r.coverUrl != null and !#strings.isEmpty(r.coverUrl)}"
+                   class="cover-thumb-ph">书</div>
+            </a>
+          </td>
+          <td>
+            <a th:href="@{/books/{id}(id=${r.bookId})}"
+               style="font-weight:500" th:text="${r.bookTitle}"></a>
+          </td>
+          <td th:text="${r.bookAuthor}"></td>
+          <td th:text="${#temporals.format(r.borrowAt, 'yyyy-MM-dd')}"></td>
+          <td th:text="${#temporals.format(r.dueAt, 'yyyy-MM-dd')}"></td>
+          <td>
+            <span class="badge badge-danger" th:if="${r.overdue}">已逾期</span>
+            <span class="badge badge-success" th:unless="${r.overdue}">借阅中</span>
+          </td>
+          <td style="text-align:right">
+            <form th:action="@{/borrow/return/{id}(id=${r.id})}" method="post" style="margin:0"
+                  th:attr="onsubmit=|return confirm('确定归还图书「${r.bookTitle}」吗？');|">
+              <button type="submit" class="btn btn-primary btn-sm">归还</button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="empty" th:if="${activeRecords.isEmpty()}">
+    <p class="empty-title">当前没有借阅中的图书</p>
+    <p><a th:href="@{/books}" style="color:var(--primary)">去图书列表看看 →</a></p>
+  </div>
+
+  <!-- ============ 历史记录 ============ -->
+  <h2 class="section-title" th:if="${!historyRecords.isEmpty()}">历史记录
+    <span class="section-count" th:text="${historyRecords.size()}"></span>
+  </h2>
+
+  <div class="card" th:if="${!historyRecords.isEmpty()}">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+        <tr>
+          <th>封面</th>
+          <th>书名</th>
+          <th>作者</th>
+          <th>借出时间</th>
+          <th>应还时间</th>
+          <th>归还时间</th>
+          <th>结果</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${historyRecords}">
+          <td>
+            <a th:href="@{/books/{id}(id=${r.bookId})}">
+              <img th:if="${r.coverUrl != null and !#strings.isEmpty(r.coverUrl)}"
+                   class="cover-thumb" th:src="${r.coverUrl}" th:alt="${r.bookTitle}"/>
+              <div th:unless="${r.coverUrl != null and !#strings.isEmpty(r.coverUrl)}"
+                   class="cover-thumb-ph">书</div>
+            </a>
+          </td>
+          <td>
+            <a th:href="@{/books/{id}(id=${r.bookId})}"
+               style="font-weight:500" th:text="${r.bookTitle}"></a>
+          </td>
+          <td th:text="${r.bookAuthor}"></td>
+          <td th:text="${#temporals.format(r.borrowAt, 'yyyy-MM-dd')}"></td>
+          <td th:text="${#temporals.format(r.dueAt, 'yyyy-MM-dd')}"></td>
+          <td th:text="${r.returnAt != null} ? ${#temporals.format(r.returnAt, 'yyyy-MM-dd HH:mm')} : '-'"></td>
+          <td>
+            <span class="badge badge-success">已归还</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
